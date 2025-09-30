@@ -69,12 +69,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return true;
       
     case "updateXPathField":
+      sendResponse({ success: true });
       chrome.runtime.sendMessage({
         action: "updateXPathField",
         field: message.field,
         value: message.value 
       }).catch(err => console.log('Side panel not available:', err));
-      sendResponse({ success: true });
       return false;
     
     case "getSpiderList":
@@ -88,6 +88,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     case "publishSpider":
       handlePublishSpider(message, sendResponse);
       return true;
+
+    default:
+      sendResponse({ success: false, error: 'Unknown action' });
+      return false;
   }
 });
 
