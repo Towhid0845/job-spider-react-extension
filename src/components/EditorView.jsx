@@ -72,12 +72,6 @@ const EditorView = ({
         </div>
 
         <div className="p-4">
-          {/* <textarea
-            value={currentTab === 'spider' ? spiderCode : jsonConfig}
-            onChange={(e) => currentTab === 'spider' ? setSpiderCode(e.target.value) : setJsonConfig(e.target.value)}
-            className="w-full h-[calc(100vh_-_230px)] p-4 font-mono text-sm bg-gray-900 text-green-400 rounded-lg border-2 border-gray-700 focus:border-blue-500 focus:outline-none resize-none"
-            spellCheck="false"
-          /> */}
           <Editor
             value={currentTab === "spider" ? spiderCode : jsonConfig}
             onValueChange={(code) =>
@@ -127,7 +121,7 @@ const EditorView = ({
 
       {/* Publish Confirmation Modal */}
       {showPublishModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm p-4">
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" style={{ backdropFilter: 'blur(5px)' }}>
           <div className="bg-white rounded-xl p-8 max-w-md w-full text-center shadow-2xl animate-modal-in">
             <div className="text-6xl mb-4">⚠️</div>
             <h3 className="text-2xl font-bold mb-2">Confirm Publish</h3>
