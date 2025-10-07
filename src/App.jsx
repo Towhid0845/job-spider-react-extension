@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import AuthView from './components/AuthView';
 import WebsitesView from './components/WebsitesView';
 import XPathView from './components/XPathView';
@@ -35,6 +35,7 @@ const App = () => {
   const [spiderCode, setSpiderCode] = useState('');
   const [jsonConfig, setJsonConfig] = useState('');
   const [hasGeneratedCode, setHasGeneratedCode] = useState(false);
+  const [authData, setAuthData] = useState(null);
   
   const token = "215c566011a84286a440e42bb40d762347d4ab2be3334a438f9f6c2041cd57c35ca5fb28ce874110aa6873398b2d9f1c";
 
@@ -44,9 +45,10 @@ const App = () => {
   };
 
   useEffect(() => {
-    chrome.storage.local.get(['isAuthenticated'], (result) => {
-      if (result.isAuthenticated) {
+    chrome.storage.local.get(['isAuthenticated','authData'], (result) => {
+      if (result.isAuthenticated && result.authData) {
         setIsAuthenticated(true);
+        setAuthData(result.authData);
         setCurrentView('websites');
         loadWebsites();
       }
@@ -93,7 +95,7 @@ const App = () => {
   };
 
   const handleLogout = () => {
-    chrome.storage.local.set({ isAuthenticated: false });
+    chrome.storage.local.set({ isAuthenticated: false, authData: null });
     setIsAuthenticated(false);
     setCurrentView('auth');
     setAuthForm('login');

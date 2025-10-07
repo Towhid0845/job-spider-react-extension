@@ -1,10 +1,12 @@
-import React, { useState, useRef } from 'react';
-import { Lock } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Lock, Loader2 } from 'lucide-react';
 
 const AuthView = ({ authForm, setAuthForm, onAuth, onGetStarted, showNotification }) => {
-  const [loginData, setLoginData] = useState({ email: '', password: '' });
+  const [loginData, setLoginData] = useState({ email: '', password: '', sas_base_url: 'https://sas.jobdesk.com/api' });
   const [resetEmail, setResetEmail] = useState('');
   const [otpValues, setOtpValues] = useState(['', '', '', '', '', '']);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isExternal, setIsExternal] = useState(false)
   const otpInputRefs = useRef([]);
 
   const handleLogin = () => {
@@ -12,8 +14,53 @@ const AuthView = ({ authForm, setAuthForm, onAuth, onGetStarted, showNotificatio
       showNotification('Please fill in all fields', 'error');
       return;
     }
-    setAuthForm('verify');
-    showNotification('Verification code sent', 'info');
+    // setAuthForm('verify');
+    // showNotification('Verification code sent', 'info');
+
+    setIsLoading(true);
+
+    chrome.runtime.sendMessage({
+      action: "authorize_token",
+      sas_base_url: loginData.sas_base_url,
+      email: loginData.email,
+      password: loginData.password,
+      f2aKey: null
+    }, (response) => {
+      setIsLoading(false);
+
+      if (!response) {
+        showNotification('Authentication service unavailable', 'error');
+        return;
+      }
+
+      // Handle 2FA requirement
+      if (response.requires2FA || response.event === '2fa_required') {
+        setAuthForm('verify');
+        showNotification('2FA code required', 'info');
+        return;
+      }
+
+      // Handle successful login
+      if (response.authorized && response.event === 'authorization_complete') {
+        onAuth(true, response.data);
+        setAuthForm('success');
+        showNotification('Login successful', 'success');
+
+        // Store external flag if needed
+        if (response.data.isExternal) {
+          setIsExternal(true);
+        }
+        return;
+      }
+
+      // Handle failed login
+      if (response.event === 'authorization_incomplete') {
+        showNotification(response.error || 'Login failed', 'error');
+        return;
+      }
+
+      showNotification('Unexpected response from server', 'error');
+    });
   };
 
   const handleForgotPassword = () => {
@@ -26,22 +73,58 @@ const AuthView = ({ authForm, setAuthForm, onAuth, onGetStarted, showNotificatio
   };
 
   const handleVerify = () => {
-    const code = otpValues.join('');
-    if (code.length !== 6) {
+    const f2aKey = otpValues.join('');
+    if (f2aKey.length !== 6) {
       showNotification('Please enter the full 6-digit code', 'error');
       return;
     }
-    onAuth(true);
-    setAuthForm('success');
+    // onAuth(true);
+    // setAuthForm('success');
+
+    setIsLoading(true);
+
+    chrome.runtime.sendMessage({
+      action: "authorize_token",
+      sas_base_url: loginData.sas_base_url,
+      email: loginData.email,
+      password: loginData.password,
+      f2aKey: f2aKey
+    }, (response) => {
+      setIsLoading(false);
+
+      if (!response) {
+        showNotification('Authentication service unavailable', 'error');
+        return;
+      }
+
+      // Handle successful 2FA verification
+      if (response.authorized && response.event === 'authorization_complete') {
+        onAuth(true, response.data);
+        setAuthForm('success');
+        showNotification('2FA verification successful', 'success');
+        return;
+      }
+
+      // Handle failed 2FA
+      if (response.event === 'authorization_incomplete') {
+        showNotification(response.error || '2FA verification failed', 'error');
+        setOtpValues(['', '', '', '', '', '']);
+        otpInputRefs.current[0]?.focus();
+        return;
+      }
+
+      showNotification('Unexpected response from server', 'error');
+    });
+
   };
 
   const handleOtpChange = (index, value) => {
     if (!/^\d*$/.test(value)) return;
-    
+
     const newOtp = [...otpValues];
     newOtp[index] = value;
     setOtpValues(newOtp);
-    
+
     if (value && index < 5) {
       otpInputRefs.current[index + 1]?.focus();
     }
@@ -51,12 +134,18 @@ const AuthView = ({ authForm, setAuthForm, onAuth, onGetStarted, showNotificatio
     e.preventDefault();
     const pastedData = e.clipboardData.getData('text').replace(/\D/g, '');
     const newOtp = [...otpValues];
-    
+
     for (let i = 0; i < Math.min(pastedData.length, 6); i++) {
       newOtp[i] = pastedData[i];
     }
-    
+
     setOtpValues(newOtp);
+  };
+
+  const handleResendCode = () => {
+    showNotification('Resending 2FA code...', 'info');
+    // Re-trigger login to get new 2FA code
+    handleLogin();
   };
 
   return (
@@ -74,8 +163,8 @@ const AuthView = ({ authForm, setAuthForm, onAuth, onGetStarted, showNotificatio
               <input
                 type="email"
                 value={loginData.email}
-                onChange={(e) => setLoginData({...loginData, email: e.target.value})}
-                onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
+                onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
+                onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
                 className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none"
                 placeholder="Enter your email"
               />
@@ -85,8 +174,8 @@ const AuthView = ({ authForm, setAuthForm, onAuth, onGetStarted, showNotificatio
               <input
                 type="password"
                 value={loginData.password}
-                onChange={(e) => setLoginData({...loginData, password: e.target.value})}
-                onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
+                onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
+                onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
                 className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none"
                 placeholder="Enter your password"
               />
@@ -113,12 +202,12 @@ const AuthView = ({ authForm, setAuthForm, onAuth, onGetStarted, showNotificatio
                 type="email"
                 value={resetEmail}
                 onChange={(e) => setResetEmail(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleForgotPassword()}
+                onKeyDown={(e) => e.key === 'Enter' && handleForgotPassword()}
                 className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none"
                 placeholder="Enter your email"
               />
             </div>
-            <button 
+            <button
               onClick={handleForgotPassword}
               className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 rounded-full font-medium hover:shadow-lg transition-all"
             >
@@ -155,16 +244,24 @@ const AuthView = ({ authForm, setAuthForm, onAuth, onGetStarted, showNotificatio
             </div>
             <button
               onClick={handleVerify}
+              disabled={isLoading}
               className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-2 rounded-full font-medium hover:shadow-lg transition-all"
             >
-              Verify Code
+              {isLoading ? (
+                <>
+                  <Loader2 className="animate-spin" size={18} />
+                  Verifying...
+                </>
+              ) : (
+                'Verify Code'
+              )}
             </button>
             <div className="text-center text-sm">
-              <button onClick={() => showNotification('Code resent', 'info')} className="text-blue-500 hover:underline">
+              <button onClick={handleResendCode} disabled={isLoading} className="text-blue-500 hover:underline">
                 Resend Code
               </button>
               <span className="mx-2">•</span>
-              <button onClick={() => setAuthForm('login')} className="text-blue-500 hover:underline">
+              <button onClick={() => setAuthForm('login')} disabled={isLoading} className="text-blue-500 hover:underline">
                 Back to Sign In
               </button>
             </div>
@@ -176,6 +273,9 @@ const AuthView = ({ authForm, setAuthForm, onAuth, onGetStarted, showNotificatio
             <div className="text-6xl mb-4">✅</div>
             <h2 className="text-2xl font-bold mb-2">Authentication Successful</h2>
             <p className="text-gray-600 mb-6">You can now use jobdesk Spider features</p>
+            {isExternal && (
+              <p className="text-sm text-blue-600 mb-4">External login detected</p>
+            )}
             <button
               onClick={onGetStarted}
               className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-2 rounded-full font-medium hover:shadow-lg transition-all"
