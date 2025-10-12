@@ -8,7 +8,28 @@ if (!window.__xPathCopierInjected) {
 
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "copyXPath" && lastRightClickedElement) {
-      const xpath = getXPath(lastRightClickedElement);
+      let xpath = getXPath(lastRightClickedElement);
+      if (request.field === "job-link" || request.field === "Job Link") {
+        // Avoid duplicate if xpath already ends with /@href
+        if (!xpath.endsWith("/@href")) {
+          xpath += "/@href";
+        }
+      }
+
+      if (request.field === "company-logo" || request.field === "Company Logo") {
+        // Avoid duplicate if xpath already ends with /@href
+        if (!xpath.endsWith("/@src")) {
+          xpath += "/@src";
+        }
+      }
+
+      if (request.field === "job-location" || request.field === "Job Location" || request.field === "job-title" || request.field === "Job Title") {
+        // Avoid duplicate if xpath already ends with /@href
+        if (!xpath.endsWith("/text()")) {
+          xpath += "/text()";
+        }
+      }
+
       chrome.runtime.sendMessage({
         action: "updateXPathField",
         field: request.field,
@@ -41,7 +62,7 @@ if (!window.__xPathCopierInjected) {
     `;
     notification.textContent = message;
     document.body.appendChild(notification);
-    
+
     setTimeout(() => notification.remove(), 2000);
   }
 

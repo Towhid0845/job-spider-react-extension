@@ -1,15 +1,59 @@
 import { ArrowLeft, Loader2 } from 'lucide-react';
-
-const XPathView = ({ 
-  xpathData, 
-  setXpathData, 
-  hasGeneratedCode, 
-  isLoading, 
-  onGenerate, 
-  onClear, 
-  onBack, 
-  onEditCode 
+import { useState } from 'react';
+const XPathView = ({
+  xpathData,
+  setXpathData,
+  hasGeneratedCode,
+  isLoading,
+  onGenerate,
+  onClear,
+  onBack,
+  onEditCode,
+  showNotification
 }) => {
+  const [missingFields, setMissingFields] = useState([]);
+  // Validation function
+  const validateFields = () => {
+    const missing = [];
+
+    Object.entries(xpathData).forEach(([key, value]) => {
+      if (key === 'playwright') return; // skip toggle
+      if (key === 'playwright-selector' && !xpathData.playwright) return; // skip if not used
+      if (!value || value.trim() === '') missing.push(key);
+    })
+
+    setMissingFields(missing);
+
+    if (missing.length > 0) {
+      const readable = missing
+        .map((k) =>
+          k
+            .split('-')
+            .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+            .join(' ')
+        )
+        .join(', ');
+
+      showNotification(`Please fill all required fields: ${readable}`, 'error');
+      return false;
+    }
+    return true;
+  };
+  // Handle Generate click
+  const handleGenerate = () => {
+    if (validateFields()) {
+      onGenerate();
+    }
+  };
+
+  const handleChange = (key, value) => {
+    setXpathData({ ...xpathData, [key]: value });
+    if (missingFields.includes(key) && value.trim() !== '') {
+      // remove from missing list dynamically when user types
+      setMissingFields(missingFields.filter((f) => f !== key));
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto p-4">
       <div className="bg-white rounded-xl shadow-lg overflow-hidden">
@@ -43,7 +87,7 @@ const XPathView = ({
                       <input
                         type="radio"
                         checked={value === true}
-                        onChange={() => setXpathData({...xpathData, playwright: true})}
+                        onChange={() => setXpathData({ ...xpathData, playwright: true })}
                         className="w-4 h-4 text-blue-600"
                       />
                       <span>Yes</span>
@@ -52,7 +96,7 @@ const XPathView = ({
                       <input
                         type="radio"
                         checked={value === false}
-                        onChange={() => setXpathData({...xpathData, playwright: false})}
+                        onChange={() => setXpathData({ ...xpathData, playwright: false })}
                         className="w-4 h-4 text-blue-600"
                       />
                       <span>No</span>
@@ -62,7 +106,7 @@ const XPathView = ({
               );
             }
             if (key === 'playwright-selector' && !xpathData.playwright) return null;
-            
+            const isMissing = missingFields.includes(key);
             return (
               <div key={key}>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -71,17 +115,26 @@ const XPathView = ({
                 <input
                   type="text"
                   value={value}
-                  onChange={(e) => setXpathData({...xpathData, [key]: e.target.value})}
-                  className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none transition-colors"
+                  onChange={(e) => handleChange(key, e.target.value)}
+                  className={`w-full px-4 py-2 border-2 rounded-lg focus:outline-none transition-colors ${isMissing
+                      ? 'border-red-500 focus:border-red-500 bg-red-50'
+                      : 'border-gray-200 focus:border-blue-500'
+                    }`}
                 />
+                {isMissing && (
+                  <p className="text-red-500 text-sm mt-1">
+                    This field is required
+                  </p>
+                )}
               </div>
             );
+            // className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none transition-colors"
           })}
         </div>
 
         <div className="p-6 flex gap-3">
           <button
-            onClick={onGenerate}
+            onClick={handleGenerate}
             disabled={isLoading}
             className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white py-[5px] rounded-full font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >

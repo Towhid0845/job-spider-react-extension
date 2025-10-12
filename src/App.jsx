@@ -104,6 +104,7 @@ const App = () => {
   };
 
   const selectWebsite = (website) => {
+    clearFields();
     setSelectedWebsite(website);
     setXpathData(prev => ({
       ...prev,
@@ -289,6 +290,7 @@ const App = () => {
           onClear={clearFields}
           onBack={() => setCurrentView('websites')}
           onEditCode={() => setCurrentView('editor')}
+          showNotification={showNotification}
         />
       )}
 
