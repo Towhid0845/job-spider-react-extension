@@ -112,11 +112,28 @@ async function handleAuthorization(message, sendResponse) {
       f2aKey = null
     } = message;
     // console.log("Authorization request received:", message);
-    
+
+    let geoInfo = null;
+    try {
+      const geoResp = await fetch("https://sas.jobdesk.com/api/HomeApp/jdp/mepi/false", {
+        method: "GET",
+        headers: {
+          "token": "52158475DFDC4D21BE6565F56CB3FA547352B8E42EDE48188F435866B254D0E9"
+        }
+      });
+      geoInfo = await geoResp.json();
+      console.log("Geo info fetched:", geoInfo);
+    } catch (geoErr) {
+      console.warn("Geo info fetch failed:", geoErr);
+      geoInfo = {}; // fallback empty
+    }
 
     const requestBody = {
       email,
-      password
+      password,
+      LastLoginRegionCode: geoInfo?.IpObject?.continentCode || "",
+      LastLoginIP: geoInfo?.IpObject?.query || "",
+      LastLoginCountryCode: geoInfo?.IpObject?.countryCode || ""
     };
 
     if (f2aKey) {
@@ -134,6 +151,7 @@ async function handleAuthorization(message, sendResponse) {
       }).then(resp => resp.json());
     };
 
+    console.log("Login request:", requestBody);
     const json = await performLogin(sas_base_url, requestBody);
     console.log("Login response:", json);
 
@@ -144,7 +162,10 @@ async function handleAuthorization(message, sendResponse) {
       try {
         const externalResponse = await performLogin(json.Domain + '/api', {
           email,
-          password
+          password,
+          LastLoginRegionCode: geoInfo?.ipObject?.continentCode || "",
+          LastLoginIP: geoInfo?.ipObject?.query || "",
+          LastLoginCountryCode: geoInfo?.ipObject?.countryCode || ""
         });
 
         if (externalResponse) {
@@ -191,7 +212,7 @@ async function handleAuthorization(message, sendResponse) {
 
     // CASE 2: 2FA required
     if (json.fa2 === true && !f2aKey) {
-      sendResponse({ 
+      sendResponse({
         event: '2fa_required',
         authorized: false,
         requires2FA: true
@@ -202,7 +223,7 @@ async function handleAuthorization(message, sendResponse) {
     // CASE 3: Normal login success
     if (json) {
       const token = json.token || json;
-      
+
       // Store auth data
       await chrome.storage.local.set({
         isAuthenticated: true,
@@ -223,7 +244,7 @@ async function handleAuthorization(message, sendResponse) {
         }
       });
     }
-    
+
     // CASE 4: Login failed
     else {
       sendResponse({
