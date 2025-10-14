@@ -163,9 +163,9 @@ async function handleAuthorization(message, sendResponse) {
         const externalResponse = await performLogin(json.Domain + '/api', {
           email,
           password,
-          LastLoginRegionCode: geoInfo?.ipObject?.continentCode || "",
-          LastLoginIP: geoInfo?.ipObject?.query || "",
-          LastLoginCountryCode: geoInfo?.ipObject?.countryCode || ""
+          LastLoginRegionCode: geoInfo?.IpObject?.continentCode || "",
+          LastLoginIP: geoInfo?.IpObject?.query || "",
+          LastLoginCountryCode: geoInfo?.IpObject?.countryCode || ""
         });
 
         if (externalResponse) {
