@@ -8,27 +8,32 @@ if (!window.__xPathCopierInjected) {
 
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "copyXPath" && lastRightClickedElement) {
-      let xpath = getXPath(lastRightClickedElement);
+
+      let xpath = "";
+
       if (request.field === "job-link" || request.field === "Job Link") {
+        xpath = getJobLinkXPath(lastRightClickedElement);
         // Avoid duplicate if xpath already ends with /@href
         if (!xpath.endsWith("/@href")) {
           xpath += "/@href";
         }
-      }
-
-      if (request.field === "company-logo" || request.field === "Company Logo") {
-        // Avoid duplicate if xpath already ends with /@href
-        if (!xpath.endsWith("/@src")) {
+      } else if (request.field === "company-logo" || request.field === "Company Logo") {
+        xpath = getCompanyLogoXPath(lastRightClickedElement);
+        // Avoid duplicate if xpath already ends with /@src
+        if (!xpath.endsWith("/@src") && !xpath.endsWith("found")) {
           xpath += "/@src";
         }
-      }
+      } else {
+        xpath = getXPath(lastRightClickedElement);
 
-      if (request.field === "job-location" || request.field === "Job Location" || request.field === "job-title" || request.field === "Job Title") {
-        // Avoid duplicate if xpath already ends with /@href
-        if (!xpath.endsWith("/text()")) {
-          xpath += "/text()";
+        if (request.field === "job-location" || request.field === "Job Location" || request.field === "job-title" || request.field === "Job Title") {
+          // Avoid duplicate if xpath already ends with /text()
+          if (!xpath.endsWith("/text()")) {
+            xpath += "/text()";
+          }
         }
       }
+
 
       chrome.runtime.sendMessage({
         action: "updateXPathField",
@@ -94,4 +99,103 @@ if (!window.__xPathCopierInjected) {
       }
     }
   }
+
+  // ✅ Helper: find nearest <a> parent
+  function getJobLinkXPath(element) {
+    if (!element) return "";
+
+    // Step 1: Find the closest visible and meaningful <a> tag
+    const linkAncestor = findValidAnchor(element);
+    if (linkAncestor) {
+      return getXPath(linkAncestor);
+    }
+
+    // Step 2: Otherwise, build XPath normally
+    return getXPath(element);
+  }
+
+  // ✅ Helper: find nearest <img> (likely company logo)
+  function getCompanyLogoXPath(element) {
+    // If element itself is an <img>
+    if (element.tagName && element.tagName.toLowerCase() === 'img') {
+      return getXPath(element);
+    }
+
+    // Try to find the closest <svg>
+    const svgTag = findClosest(element, "svg");
+    if (svgTag) {
+      console.log("SVG found");
+      // return getXPath(svgTag);
+      return "No image src available — SVG found";
+    }
+
+    // If inside header/nav/brand section, find the first <img>
+    const headerZone = element.closest('header, nav, [class*="header"], [class*="navbar"], [class*="brand"], [id*="header"], [id*="nav"]');
+    if (headerZone) {
+      const img = headerZone.querySelector('img');
+      if (img) return getXPath(img);
+    }
+
+    // Otherwise, find the nearest <img> ancestor or sibling
+    const nearbyImg = element.closest('img') || element.parentElement?.querySelector('img');
+    if (nearbyImg) return getXPath(nearbyImg);
+
+    return 'No img tag found';
+  }
+
+  /** Find the closest <a> ancestor that is visible and not empty */
+  function findValidAnchor(element) {
+    let current = element;
+    while (current && current !== document.body) {
+      if (current.tagName && current.tagName.toLowerCase() === "a") {
+        if (isVisible(current) && hasMeaningfulContent(current)) {
+          return current;
+        }
+      }
+      current = current.parentElement;
+    }
+    return null;
+  }
+
+  /** Check if element is visible */
+  function isVisible(el) {
+    const style = window.getComputedStyle(el);
+    const rect = el.getBoundingClientRect();
+    return (
+      style.display !== "none" &&
+      style.visibility !== "hidden" &&
+      rect.width > 0 &&
+      rect.height > 0
+    );
+  }
+
+  /** Check if <a> tag has real text or visible children */
+  function hasMeaningfulContent(a) {
+    const text = a.textContent.trim();
+    if (text.length > 3) return true; // has readable text
+
+    // Check if it contains visible nested elements
+    const visibleChildren = Array.from(a.querySelectorAll("*")).filter(isVisible);
+    return visibleChildren.some(
+      (child) =>
+        child.tagName.toLowerCase() === "div" ||
+        child.tagName.toLowerCase() === "span" ||
+        child.tagName.toLowerCase() === "h4" ||
+        child.tagName.toLowerCase() === "h5"
+    );
+  }
+
+  /** Find closest matching element by tag name */
+  function findClosest(element, tagName) {
+    let current = element;
+    tagName = tagName.toLowerCase();
+    while (current && current !== document.body) {
+      if (current.tagName && current.tagName.toLowerCase() === tagName) {
+        return current;
+      }
+      current = current.parentElement;
+    }
+    return null;
+  }
+
 }
