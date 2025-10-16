@@ -23,15 +23,18 @@ if (!window.__xPathCopierInjected) {
         if (!xpath.endsWith("/@src") && !xpath.endsWith("found")) {
           xpath += "/@src";
         }
+      } else if (request.field === "job-location" || request.field === "Job Location" || request.field === "job-title" || request.field === "Job Title") {
+        xpath = getXPath(lastRightClickedElement);
+        // Avoid duplicate if xpath already ends with /text()
+        if (!xpath.endsWith("/text()")) {
+          xpath += "/text()";
+        }
+      } else if (request.field === "job-content" || request.field === "Job Content") {
+        // xpath = getJobContentXPath(lastRightClickedElement);
+        let container = getJobContentContainer(lastRightClickedElement);
+        xpath = getXPath(container);
       } else {
         xpath = getXPath(lastRightClickedElement);
-
-        if (request.field === "job-location" || request.field === "Job Location" || request.field === "job-title" || request.field === "Job Title") {
-          // Avoid duplicate if xpath already ends with /text()
-          if (!xpath.endsWith("/text()")) {
-            xpath += "/text()";
-          }
-        }
       }
 
 
@@ -142,6 +145,83 @@ if (!window.__xPathCopierInjected) {
 
     return 'No img tag found';
   }
+
+  // ✅ Helper: find nearest job content parent
+  // function getJobContentXPath(element) {
+  //   if (!element) return "";
+
+  //   // Walk up until we hit something that looks like a content wrapper
+  //   let current = element;
+
+  //   while (current && current !== document.body) {
+  //     const className = (current.className || "").toLowerCase();
+  //     const id = (current.id || "").toLowerCase();
+
+  //     // 1️⃣ Check for common keywords used in job content wrappers
+  //     if (
+  //       /description|content|content-box|jobbody|job-description|details|posting|editor|wysiwyg|body/i.test(
+  //         className + " " + id
+  //       )
+  //     ) {
+  //       return getXPath(current);
+  //     }
+
+  //     // 2️⃣ Stop early if we go too high (like <main> or <body>)
+  //     if (["main", "body", "html"].includes(current.tagName.toLowerCase())) {
+  //       break;
+  //     }
+
+  //     current = current.parentElement;
+  //   }
+
+  //   // If not found, fallback to nearest <div> parent
+  //   const fallbackDiv = element.closest("div");
+  //   if (fallbackDiv) return getXPath(fallbackDiv);
+
+  //   return getXPath(element);
+  // }
+  function getJobContentContainer(element) {
+    const BLOCK_TAGS = ['P', 'UL', 'OL', 'H1', 'H2', 'H3', 'DIV', 'COL', 'SPAN'];
+    const KEYWORDS = ['content', 'description', 'details', 'body', 'editor', 'wysiwyg', 'jobbody', 'jobdescription', 'job-description', 'posting', 'layout'];
+
+    let current = element;
+
+    while (current && current !== document.body) {
+      // 1️⃣ Check for keyword hint in class or id
+      const classId = (current.className || "") + " " + (current.id || "");
+      if (KEYWORDS.some(k => classId.toLowerCase().includes(k))) {
+        return current; // found a likely content container
+      }
+
+      // 2️⃣ Check sibling count and type
+      const siblings = Array.from(current.parentNode?.children || []);
+      const blockSiblings = siblings.filter(s => BLOCK_TAGS.includes(s.tagName));
+
+      if (blockSiblings.length >= 2) {
+        return current.parentNode; // multiple structured siblings — go one level up
+      }
+
+      // 3️⃣ Check if this element itself has enough block children
+      const blockChildren = Array.from(current.children).filter(c =>
+        BLOCK_TAGS.includes(c.tagName)
+      );
+      if (blockChildren.length >= 3) {
+        return current; // rich structured container
+      }
+
+      // 4️⃣ Aggressive fallback: if it's just a <div> go one step up
+      if (current.tagName.toLowerCase() === 'div') {
+        return current.parentNode || current;
+      }
+
+      // keep climbing
+      current = current.parentNode;
+    }
+
+    return element; // fallback
+  }
+
+
 
   /** Find the closest <a> ancestor that is visible and not empty */
   function findValidAnchor(element) {
