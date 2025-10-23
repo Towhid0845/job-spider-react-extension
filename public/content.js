@@ -221,8 +221,6 @@ if (!window.__xPathCopierInjected) {
     return element; // fallback
   }
 
-
-
   /** Find the closest <a> ancestor that is visible and not empty */
   function findValidAnchor(element) {
     let current = element;

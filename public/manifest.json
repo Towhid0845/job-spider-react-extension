@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "jobdesk Spider Plugin (React)",
+  "name": "jobdesk Spider Plugin",
   "version": "1.0",
-  "description": "Create job spider automatically using XPath Copier Extension",
+  "description": "Create job spider automatically using XPath",
   "permissions": [
     "activeTab",
     "scripting",

@@ -47,11 +47,38 @@ const XPathView = ({
   };
 
   const handleChange = (key, value) => {
-    setXpathData({ ...xpathData, [key]: value });
+    // setXpathData({ ...xpathData, [key]: value });
+    const updatedData = { ...xpathData, [key]: value };
+
     if (missingFields.includes(key) && value.trim() !== '') {
       // remove from missing list dynamically when user types
       setMissingFields(missingFields.filter((f) => f !== key));
     }
+
+    // Auto-generate source-key when start-url changes
+    if (key === 'start-url' && value.trim()) {
+      try {
+        // Ensure it has a protocol
+        const url = value.startsWith('http') ? value : 'https://' + value;
+        const parsedUrl = new URL(url);
+
+        // Example: from "https://jobs.jansen.com/eng"
+        // we want "jobs.jansen.com"
+        let host = parsedUrl.hostname;
+
+        // Handle common cases:
+        // remove "www." or other prefixes like "careers."
+        host = host.replace(/^www\./, '').replace(/^careers\./, '');
+
+        // Remove trailing dots if any
+        host = host.replace(/\.$/, '');
+
+        updatedData['source-key'] = host;
+      } catch (err) {
+        console.warn('Invalid start URL, cannot derive source key:', err);
+      }
+    }
+    setXpathData(updatedData);
   };
 
   return (
@@ -117,8 +144,8 @@ const XPathView = ({
                   value={value}
                   onChange={(e) => handleChange(key, e.target.value)}
                   className={`w-full px-4 py-2 border-2 rounded-lg focus:outline-none transition-colors ${isMissing
-                      ? 'border-red-500 focus:border-red-500 bg-red-50'
-                      : 'border-gray-200 focus:border-blue-500'
+                    ? 'border-red-500 focus:border-red-500 bg-red-50'
+                    : 'border-gray-200 focus:border-blue-500'
                     }`}
                 />
                 {isMissing && (
@@ -128,7 +155,6 @@ const XPathView = ({
                 )}
               </div>
             );
-            // className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none transition-colors"
           })}
         </div>
 

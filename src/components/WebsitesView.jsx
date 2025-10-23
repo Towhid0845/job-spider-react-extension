@@ -1,42 +1,88 @@
 import { Loader2 } from 'lucide-react';
+import { useState } from 'react';
 
-const WebsitesView = ({ 
-  websitesData, 
-  currentFilter, 
-  setCurrentFilter, 
-  selectedWebsite, 
-  isLoading, 
-  onSelectWebsite, 
-  onCustomSpider, 
-  onLogout 
-}) => {
+
+const WebsitesView = ({ websitesData, currentFilter, setCurrentFilter, selectedWebsite, isLoading, onSelectWebsite, onCustomSpider, onLogout }) => {
+  const [searchTerm, setSearchTerm] = useState('');
+
   const getFilteredWebsites = () => {
+    let filtered = websitesData;
+
+    // switch (currentFilter) {
+    //   case 'no-spider':
+    //     return websitesData.filter(w => w.hasNoSpider === true);
+    //   case 'broken-spider':
+    //     return websitesData.filter(w => w.status === 'broken-spider');
+    //   default:
+    //     return websitesData;
+    // }
     switch (currentFilter) {
       case 'no-spider':
-        return websitesData.filter(w => w.hasNoSpider === true);
+        filtered = filtered.filter(w => w.hasNoSpider === true);
+        break;
       case 'broken-spider':
-        return websitesData.filter(w => w.status === 'broken-spider');
+        filtered = filtered.filter(w => w.status === 'broken-spider');
+        break;
       default:
-        return websitesData;
+        break;
     }
+
+    // Apply search filter
+    if (searchTerm.trim() !== '') {
+      const lower = searchTerm.toLowerCase();
+      filtered = filtered.filter(
+        (w) =>
+          w.companyName?.toLowerCase().includes(lower) ||
+          w.sourceKey?.toLowerCase().includes(lower)
+      );
+    }
+
+    return filtered;
   };
 
   return (
     <div className="max-w-6xl mx-auto p-4">
+      <style>
+        {`
+          @media (max-width: 515px) {
+            .btn-section {
+              order: 1 !important;
+            }
+            .search-section {
+              order: 3 !important;
+              width: 100% !important;
+            }
+            .filter-section {
+              order: 2 !important;
+            }
+          }
+        `}
+      </style>
       <div className="bg-white rounded-xl shadow-lg overflow-hidden">
         <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-3 text-center">
-          <h3 className="text-lg font-semibold">Select a website to create a spider</h3>
+          <h3 className="text-lg font-semibold">List of spider</h3>
         </div>
 
-        <div className="p-3 border-b flex justify-between items-center flex-wrap gap-4">
+        <div className="p-3 border-b flex justify-between items-center flex-wrap gap-3">
           <button
             onClick={onCustomSpider}
-            className="bg-gradient-to-r from-gray-600 to-gray-700 text-white px-4 py-[5px] rounded-full text-sm font-medium hover:shadow-lg transition-all"
+            className="btn-section bg-gradient-to-r from-gray-600 to-gray-700 text-white px-4 py-[5px] rounded-full text-sm font-medium hover:shadow-lg transition-all"
           >
             Custom Spider
           </button>
 
-          <div className="flex gap-2 items-center">
+          {/* search section */}
+          <input
+            type="text"
+            placeholder="Search websites..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="search-section border border-gray-300 rounded-full px-3 py-[5px] text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            style={{ minWidth: '200px' }}
+          />
+
+
+          <div className="flex gap-2 items-center filter-section ">
             <div className="flex gap-2">
               {[
                 { filter: 'no-spider', icon: '🚫', tooltip: 'No Spider' },
@@ -46,9 +92,8 @@ const WebsitesView = ({
                 <button
                   key={filter}
                   onClick={() => setCurrentFilter(filter)}
-                  className={`px-[3px] py-[2px] rounded-lg border transition-all ${
-                    currentFilter === filter ? 'border-indigo-600 border-2 bg-indigo-50' : 'border-gray-300 bg-white'
-                  }`}
+                  className={`px-[3px] py-[2px] rounded-lg border transition-all ${currentFilter === filter ? 'border-indigo-600 border-2 bg-indigo-50' : 'border-gray-300 bg-white'
+                    }`}
                   title={tooltip}
                 >
                   {icon}
@@ -92,9 +137,8 @@ const WebsitesView = ({
                     <tr
                       key={index}
                       onClick={() => onSelectWebsite(website)}
-                      className={`border-b hover:bg-indigo-50 cursor-pointer transition-all duration-300 ease-in-out hover:translate-x-[5px] ${
-                        selectedWebsite?.companyName === website.companyName ? 'bg-indigo-100 border-l-4 border-l-indigo-600' : ''
-                      }`}
+                      className={`border-b hover:bg-indigo-50 cursor-pointer transition-all duration-300 ease-in-out hover:translate-x-[5px] ${selectedWebsite?.companyName === website.companyName ? 'bg-indigo-100 border-l-4 border-l-indigo-600' : ''
+                        }`}
                     >
                       <td className="px-6 py-[5px]">{website.countryCode}</td>
                       <td className="px-6 py-[5px] font-medium">{website.companyName}</td>

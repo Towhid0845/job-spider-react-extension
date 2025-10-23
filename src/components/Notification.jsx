@@ -6,7 +6,8 @@ const Notification = ({ message, type, onClose }) => {
     <div 
       className={`fixed bottom-10 max-w-sm right-10 px-4 py-3 rounded-lg shadow-lg text-white z-[60] flex items-center gap-2 animate-slide-in cursor-pointer ${
         type === 'success' ? 'bg-gradient-to-r from-green-500 to-green-600' :
-        type === 'error' ? 'bg-gradient-to-r from-red-500 to-red-600' :
+        type === 'error' ? 'bg-gradient-to-r from-red-500 to-red-600' : 
+        type === 'warning' ? 'bg-gradient-to-r from-orange-500 to-orange-600' :
         'bg-gradient-to-r from-yellow-500 to-yellow-600'
       }`}
       onClick={onClose}

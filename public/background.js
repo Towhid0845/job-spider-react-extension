@@ -35,19 +35,52 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   }
 });
 
-chrome.contextMenus.onClicked.addListener((info, tab) => {
-  chrome.storage.local.get(['isAuthenticated'], (result) => {
-    if (!result.isAuthenticated) {
-      openSidePanelForAuth();
-      return;
-    }
+// chrome.contextMenus.onClicked.addListener((info, tab) => {
+//   chrome.storage.local.get(['isAuthenticated'], (result) => {
+//     if (!result.isAuthenticated) {
+//       openSidePanelForAuth();
+//       return;
+//     }
 
-    chrome.tabs.sendMessage(tab.id, {
+//     chrome.tabs.sendMessage(tab.id, {
+//       action: "copyXPath",
+//       field: info.menuItemId
+//     });
+//   });
+// });
+
+chrome.contextMenus.onClicked.addListener(async (info, tab) => {
+  const { isAuthenticated } = await chrome.storage.local.get(['isAuthenticated']);
+
+  if (!isAuthenticated) {
+    openSidePanelForAuth();
+    return;
+  }
+
+  try {
+    await chrome.tabs.sendMessage(tab.id, {
       action: "copyXPath",
       field: info.menuItemId
     });
-  });
+  } catch (err) {
+    // If no content script exists, inject it first
+    console.warn("Content script not found, injecting again...", err);
+    try {
+      await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        files: ["content.js"]
+      });
+      // Retry sending message
+      await chrome.tabs.sendMessage(tab.id, {
+        action: "copyXPath",
+        field: info.menuItemId
+      });
+    } catch (e2) {
+      console.error("Failed to inject content script:", e2);
+    }
+  }
 });
+
 
 function openSidePanelForAuth() {
   chrome.sidePanel.open({ windowId: chrome.windows.WINDOW_ID_CURRENT })
@@ -74,7 +107,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         action: "updateXPathField",
         field: message.field,
         value: message.value
-      }).catch(err => console.log('Side panel not available:', err));
+      }).catch(err => console.warn('Reload to send message to background:', err));
       return false;
 
     case "authorize_token":
@@ -317,6 +350,7 @@ async function handleGetSpiderList(message, sendResponse) {
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
     const data = await response.json();
+    console.log("Fetched spider list:", data[0].sourceKey);
     sendResponse({ success: true, data: data });
   } catch (err) {
     sendResponse({ success: false, error: err.message });

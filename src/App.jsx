@@ -15,7 +15,7 @@ const App = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [notification, setNotification] = useState(null);
   const [showPublishModal, setShowPublishModal] = useState(false);
-  
+
   const [xpathData, setXpathData] = useState({
     'start-url': '',
     'source-key': '',
@@ -30,13 +30,13 @@ const App = () => {
     'playwright': false,
     'playwright-selector': ''
   });
-  
+
   const [currentTab, setCurrentTab] = useState('spider');
   const [spiderCode, setSpiderCode] = useState('');
   const [jsonConfig, setJsonConfig] = useState('');
   const [hasGeneratedCode, setHasGeneratedCode] = useState(false);
   const [authData, setAuthData] = useState(null);
-  
+
   const token = "215c566011a84286a440e42bb40d762347d4ab2be3334a438f9f6c2041cd57c35ca5fb28ce874110aa6873398b2d9f1c";
 
   const showNotification = (message, type = 'success') => {
@@ -45,7 +45,7 @@ const App = () => {
   };
 
   useEffect(() => {
-    chrome.storage.local.get(['isAuthenticated','authData'], (result) => {
+    chrome.storage.local.get(['isAuthenticated', 'authData'], (result) => {
       if (result.isAuthenticated && result.authData) {
         setIsAuthenticated(true);
         setAuthData(result.authData);
@@ -64,7 +64,7 @@ const App = () => {
   }, []);
 
   const updateXPathField = (field, value) => {
-    setXpathData(prev => ({...prev, [field]: value}));
+    setXpathData(prev => ({ ...prev, [field]: value }));
   };
 
   const loadWebsites = async () => {
@@ -113,12 +113,12 @@ const App = () => {
       'company-name': website.companyName || '',
       'source-country': website.countryCode?.toLowerCase() || ''
     }));
-    
+
     if (website.startUrl) {
       const url = website.startUrl.startsWith('http') ? website.startUrl : 'https://' + website.startUrl;
       window.open(url, 'noopener,noreferrer');
     }
-    
+
     setTimeout(() => setCurrentView('xpath'), 300);
   };
 
@@ -142,6 +142,18 @@ const App = () => {
     if (allEmpty) {
       showNotification('Form is empty. Please fill in fields before generating.', 'error');
       return;
+    }
+
+    // Use the already loaded websitesData
+    if (websitesData && websitesData.length > 0) {
+      const exists = websitesData.some(spider =>
+        spider.sourceKey?.toLowerCase() === payload.source_key?.toLowerCase()
+      );
+
+      if (exists) {
+        showNotification(`Spider with source key "${payload.source_key}" already exists.`, 'warning');
+        return;
+      }
     }
 
     setIsLoading(true);
@@ -244,15 +256,15 @@ const App = () => {
   return (
     <div className="min-h-screen bg-gray-50 font-sans">
       {notification && (
-        <Notification 
-          message={notification.message} 
+        <Notification
+          message={notification.message}
           type={notification.type}
           onClose={() => setNotification(null)}
         />
       )}
 
       {currentView === 'auth' && (
-        <AuthView 
+        <AuthView
           authForm={authForm}
           setAuthForm={setAuthForm}
           onAuth={handleAuth}
