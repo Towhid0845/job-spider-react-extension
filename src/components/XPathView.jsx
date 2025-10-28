@@ -14,11 +14,16 @@ const XPathView = ({
   const [missingFields, setMissingFields] = useState([]);
   // Validation function
   const validateFields = () => {
+    const trimmedData = Object.fromEntries(
+      Object.entries(xpathData).map(([key, value]) => [key, value?.trim?.() || ''])
+    );
+    setXpathData(trimmedData);
+    
     const missing = [];
 
-    Object.entries(xpathData).forEach(([key, value]) => {
+    Object.entries(trimmedData).forEach(([key, value]) => {
       if (key === 'playwright') return; // skip toggle
-      if (key === 'playwright-selector' && !xpathData.playwright) return; // skip if not used
+      if (key === 'playwright-selector' && !trimmedData.playwright) return; // skip if not used
       if (!value || value.trim() === '') missing.push(key);
     })
 
