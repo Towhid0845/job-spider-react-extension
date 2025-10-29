@@ -1,11 +1,16 @@
 import { ArrowLeft, Copy, Download, Loader2 } from 'lucide-react';
-import Editor from "react-simple-code-editor";
-import Prism from "prismjs";
+// import Editor from "react-simple-code-editor";
+// import Prism from "prismjs";
 
 // Import Prism languages you need
-import "prismjs/components/prism-python";
-import "prismjs/components/prism-json";
-import "prismjs/themes/prism-tomorrow.css";
+// import "prismjs/components/prism-python";
+// import "prismjs/components/prism-json";
+// import "prismjs/themes/prism-tomorrow.css";
+
+import CodeMirror from '@uiw/react-codemirror';
+import { python } from '@codemirror/lang-python';
+import { json } from '@codemirror/lang-json';
+import { oneDark } from '@codemirror/theme-one-dark';
 
 const EditorView = ({
   spiderCode,
@@ -37,6 +42,14 @@ const EditorView = ({
     a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+    const onChange = (value) => {
+    if (currentTab === 'spider') {
+      setSpiderCode(value);
+    } else {
+      setJsonConfig(value);
+    }
   };
 
   return (
@@ -72,7 +85,7 @@ const EditorView = ({
         </div>
 
         <div className="p-4">
-          <Editor
+          {/* <Editor
             value={currentTab === "spider" ? spiderCode : jsonConfig}
             onValueChange={(code) =>
               currentTab === "spider" ? setSpiderCode(code) : setJsonConfig(code)
@@ -94,8 +107,20 @@ const EditorView = ({
               height: "calc(100vh - 230px)",
               overflow: "auto",
             }}
-          />
+          /> */}
 
+          <CodeMirror
+            value={currentTab === 'spider' ? spiderCode : jsonConfig}
+            height="70vh"
+            extensions={[currentTab === 'spider' ? python() : json()]}
+            onChange={(value) => onChange(value)}
+            theme={oneDark}
+            style={{
+              borderRadius: '8px',
+              overflow: 'hidden',
+              fontSize: '14px',
+            }}
+          />
           <div className="flex gap-3 mt-4 flex-wrap">
             <button
               onClick={() => copyToClipboard(currentTab === 'spider' ? spiderCode : jsonConfig)}
