@@ -303,6 +303,7 @@ const App = () => {
           onBack={() => setCurrentView('websites')}
           onEditCode={() => setCurrentView('editor')}
           showNotification={showNotification}
+          onLogout={handleLogout}
         />
       )}
 
@@ -320,6 +321,7 @@ const App = () => {
           onBack={() => setCurrentView('xpath')}
           onPublish={publishSpider}
           showNotification={showNotification}
+          onLogout={handleLogout}
         />
       )}
     </div>

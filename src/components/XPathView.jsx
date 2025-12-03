@@ -1,5 +1,6 @@
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { useState } from 'react';
+import Header from './Header.jsx';
 const XPathView = ({
   xpathData,
   setXpathData,
@@ -9,7 +10,8 @@ const XPathView = ({
   onClear,
   onBack,
   onEditCode,
-  showNotification
+  showNotification,
+  onLogout
 }) => {
   const [missingFields, setMissingFields] = useState([]);
   // Validation function
@@ -88,27 +90,26 @@ const XPathView = ({
 
   return (
     <div className="max-w-4xl mx-auto p-4">
-      <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-3 text-center">
-          <h3 className="text-lg font-semibold">Get the XPath to create a spider</h3>
-        </div>
+      <div className="bg-white rounded-xl shadow-[0_0_5px_rgba(0,0,0,0.15)] overflow-hidden">
+        
+        <Header title="Get the XPath to create a spider" onLogout={onLogout} />
 
-        <div className="p-3 border-b flex justify-between">
+        <div className="p-3 border-b border-gray-200 flex justify-between">
           <button
             onClick={onBack}
-            className="bg-gradient-to-r from-gray-600 to-gray-700 text-white px-4 py-[5px] rounded-full hover:shadow-lg transition-all flex items-center gap-2"
+            className="bg-gradient-to-r from-gray-600 to-gray-700 text-white px-4 py-[5px] rounded-full hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer"
           >
             <ArrowLeft size={16} /> Back
           </button>
           <button
             onClick={onClear}
-            className="bg-gradient-to-r from-yellow-500 to-yellow-600 text-white px-4 py-[5px] rounded-full text-sm font-medium hover:shadow-lg transition-all"
+            className="bg-gradient-to-r from-yellow-500 to-yellow-600 text-white px-4 py-[5px] rounded-full text-sm font-medium hover:shadow-lg transition-all cursor-pointer"
           >
             Clear All
           </button>
         </div>
 
-        <div className="p-4 space-y-4 h-[calc(100vh_-_220px)] overflow-y-auto">
+        <div className="p-4 space-y-4 h-[calc(100vh_-_230px)] overflow-y-auto">
           {Object.entries(xpathData).map(([key, value]) => {
             if (key === 'playwright') {
               return (
@@ -163,11 +164,11 @@ const XPathView = ({
           })}
         </div>
 
-        <div className="p-6 flex gap-3">
+        <div className="p-4 flex gap-3 border-t border-gray-200">
           <button
             onClick={handleGenerate}
             disabled={isLoading}
-            className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white py-[5px] rounded-full font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white py-[5px] rounded-full font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
           >
             {isLoading ? (
               <>
@@ -181,7 +182,7 @@ const XPathView = ({
           {hasGeneratedCode && (
             <button
               onClick={onEditCode}
-              className="flex-1 bg-gradient-to-r from-red-500 to-red-600 text-white py-[5px] rounded-full font-medium hover:shadow-lg transition-all"
+              className="flex-1 bg-gradient-to-r from-red-500 to-red-600 text-white py-[5px] rounded-full font-medium hover:shadow-lg transition-all cursor-pointer"
             >
               Edit Code
             </button>

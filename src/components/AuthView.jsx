@@ -182,7 +182,7 @@ const AuthView = ({ authForm, setAuthForm, onAuth, onGetStarted, showNotificatio
             </div>
             <button
               onClick={handleLogin}
-              className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-2 rounded-full font-medium hover:shadow-lg transition-all"
+              className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-2 rounded-full font-medium hover:shadow-lg transition-all cursor-pointer"
             >
               Sign In
             </button>
@@ -209,7 +209,7 @@ const AuthView = ({ authForm, setAuthForm, onAuth, onGetStarted, showNotificatio
             </div>
             <button
               onClick={handleForgotPassword}
-              className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 rounded-full font-medium hover:shadow-lg transition-all"
+              className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 rounded-full font-medium hover:shadow-lg transition-all cursor-pointer"
             >
               Send Reset Link
             </button>

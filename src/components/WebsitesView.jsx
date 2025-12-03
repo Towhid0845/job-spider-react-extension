@@ -1,6 +1,6 @@
 import { Loader2 } from 'lucide-react';
 import { useState } from 'react';
-
+import Header from './Header.jsx';
 
 const WebsitesView = ({ websitesData, currentFilter, setCurrentFilter, selectedWebsite, isLoading, onSelectWebsite, onCustomSpider, onLogout }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -8,14 +8,6 @@ const WebsitesView = ({ websitesData, currentFilter, setCurrentFilter, selectedW
   const getFilteredWebsites = () => {
     let filtered = websitesData;
 
-    // switch (currentFilter) {
-    //   case 'no-spider':
-    //     return websitesData.filter(w => w.hasNoSpider === true);
-    //   case 'broken-spider':
-    //     return websitesData.filter(w => w.status === 'broken-spider');
-    //   default:
-    //     return websitesData;
-    // }
     switch (currentFilter) {
       case 'no-spider':
         filtered = filtered.filter(w => w.hasNoSpider === true);
@@ -58,15 +50,13 @@ const WebsitesView = ({ websitesData, currentFilter, setCurrentFilter, selectedW
           }
         `}
       </style>
-      <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-3 text-center">
-          <h3 className="text-lg font-semibold">List of spider</h3>
-        </div>
+      <div className="bg-white rounded-xl shadow-[0_0_5px_rgba(0,0,0,0.15)] overflow-hidden">
+        <Header title="List of spider" onLogout={onLogout} />
 
         <div className="p-3 border-b flex justify-between items-center flex-wrap gap-3">
           <button
             onClick={onCustomSpider}
-            className="btn-section bg-gradient-to-r from-gray-600 to-gray-700 text-white px-4 py-[5px] rounded-full text-sm font-medium hover:shadow-lg transition-all"
+            className="btn-section bg-gradient-to-r from-gray-600 to-gray-700 text-white px-4 py-[5px] rounded-full text-sm font-medium hover:shadow-lg transition-all cursor-pointer"
           >
             Custom Spider
           </button>
@@ -100,16 +90,10 @@ const WebsitesView = ({ websitesData, currentFilter, setCurrentFilter, selectedW
                 </button>
               ))}
             </div>
-            {/* <button
-              onClick={onLogout}
-              className="ml-2 bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-2 rounded-full text-sm font-medium hover:shadow-lg transition-all"
-            >
-              Logout
-            </button> */}
           </div>
         </div>
 
-        <div className="overflow-auto h-[calc(100vh_-_140px)]">
+        <div className="overflow-auto h-[calc(100vh_-_190px)]">
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-20">
               <Loader2 className="animate-spin text-indigo-600 mb-3" size={32} />
@@ -117,7 +101,7 @@ const WebsitesView = ({ websitesData, currentFilter, setCurrentFilter, selectedW
             </div>
           ) : (
             <table className="w-full">
-              <thead className="bg-gray-50 border-b sticky top-0">
+              <thead className="bg-gray-50 border-b sticky top-0 z-10">
                 <tr>
                   <th className="px-6 py-2 text-left text-xs font-semibold text-gray-600 uppercase">ISO2</th>
                   <th className="px-6 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Company Name</th>
