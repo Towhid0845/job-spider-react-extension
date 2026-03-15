@@ -1,14 +1,26 @@
 import { Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import Header from './Header.jsx';
+import BulkSpiderDialog from './BulkSpider.jsx';
 
-const WebsitesView = ({ websitesData, currentFilter, setCurrentFilter, selectedWebsite, isLoading, onSelectWebsite, onCustomSpider, onLogout }) => {
+const WebsitesView = ({ websitesData, currentFilter, setCurrentFilter, selectedWebsite, isLoading, onSelectWebsite, onCustomSpider, onBulkCreate, onLogout }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [isBulkDialogOpen, setIsBulkDialogOpen] = useState(false);  
+
+  const handleBulkSave = async (data) => {
+    // Call your parent handler to create bulk spiders
+    await onBulkCreate(data);
+  };
 
   const getFilteredWebsites = () => {
     let filtered = websitesData;
+    console.log("filtered data: ", filtered);
+    
 
     switch (currentFilter) {
+      case 'no-code':
+        filtered = filtered.filter(w => w.hasErrors === true);
+        break;
       case 'no-spider':
         filtered = filtered.filter(w => w.hasNoSpider === true);
         break;
@@ -51,20 +63,27 @@ const WebsitesView = ({ websitesData, currentFilter, setCurrentFilter, selectedW
         `}
       </style>
       <div className="bg-white rounded-xl shadow-[0_0_5px_rgba(0,0,0,0.15)] overflow-hidden">
-        <Header title="List of spider" onLogout={onLogout} />
+        <Header title="Spiders" onLogout={onLogout} />
 
         <div className="p-3 border-b flex justify-between items-center flex-wrap gap-3">
           <button
             onClick={onCustomSpider}
             className="btn-section bg-gradient-to-r from-gray-600 to-gray-700 text-white px-4 py-[5px] rounded-full text-sm font-medium hover:shadow-lg transition-all cursor-pointer"
           >
-            Custom Spider
+            New
+          </button>
+
+          <button
+            onClick={() => setIsBulkDialogOpen(true)}
+            className="btn-section mr-auto bg-gradient-to-r from-gray-600 to-gray-700 text-white px-4 py-[5px] rounded-full text-sm font-medium hover:shadow-lg transition-all cursor-pointer"
+          >
+            Bulk
           </button>
 
           {/* search section */}
           <input
             type="text"
-            placeholder="Search websites..."
+            placeholder="Search"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="search-section border border-gray-300 rounded-full px-3 py-[5px] text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -75,8 +94,9 @@ const WebsitesView = ({ websitesData, currentFilter, setCurrentFilter, selectedW
           <div className="flex gap-2 items-center filter-section ">
             <div className="flex gap-2">
               {[
+                { filter: 'no-code', icon: '🧩', tooltip: 'Without Code' },
                 { filter: 'no-spider', icon: '🚫', tooltip: 'No Spider' },
-                { filter: 'broken-spider', icon: '🪲', tooltip: 'Broken Spider' },
+                { filter: 'broken-spider', icon: '🐞', tooltip: 'Broken Spider' },
                 { filter: 'all', icon: '✨', tooltip: 'All Spider' }
               ].map(({ filter, icon, tooltip }) => (
                 <button
@@ -106,6 +126,10 @@ const WebsitesView = ({ websitesData, currentFilter, setCurrentFilter, selectedW
                   <th className="px-6 py-2 text-left text-xs font-semibold text-gray-600 uppercase">ISO2</th>
                   <th className="px-6 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Company Name</th>
                   <th className="px-6 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Domain</th>
+                  {/* <th className="px-6 py-2 text-left text-xs font-semibold text-gray-600 uppercase">LAST</th>
+                  <th className="px-6 py-2 text-left text-xs font-semibold text-gray-600 uppercase">JOBS</th>
+                  <th className="px-6 py-2 text-left text-xs font-semibold text-gray-600 uppercase">ERR</th>
+                  <th className="px-6 py-2 text-left text-xs font-semibold text-gray-600 uppercase">NEXT</th> */}
                 </tr>
               </thead>
               <tbody>
@@ -135,6 +159,13 @@ const WebsitesView = ({ websitesData, currentFilter, setCurrentFilter, selectedW
           )}
         </div>
       </div>
+
+      {/* Bulk Spider Dialog */}
+      <BulkSpiderDialog
+        isOpen={isBulkDialogOpen}
+        onClose={() => setIsBulkDialogOpen(false)}
+        onSave={handleBulkSave}
+      />
     </div>
   );
 };

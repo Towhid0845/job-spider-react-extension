@@ -253,6 +253,39 @@ const App = () => {
     setSelectedWebsite(null);
   };
 
+  const handleBulkCreate = async (data) => {
+    try {
+      const { countryCode, urls } = data;
+      
+      // Get the token (adjust based on how you store it)
+      // const token = await getAuthToken(); // or however you get your token
+      
+      // Send message to background script
+      const response = await new Promise((resolve) => {
+        chrome.runtime.sendMessage({
+          action: "bulkCreateSpiders",
+          token: token,
+          countryCode: countryCode,
+          urls: urls
+        }, resolve);
+      });
+  
+      if (!response.success) {
+        throw new Error(response.error);
+      }
+  
+      // Reload the websites list after successful creation
+      await loadWebsites(); // Refresh the list
+      
+      console.log('✅ Bulk spiders created successfully');
+      // Optionally show a success notification
+      
+    } catch (error) {
+      console.error('Failed to create bulk spiders:', error);
+      throw error; // Re-throw so the dialog can show the error
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 font-sans">
       {notification && (
@@ -288,6 +321,7 @@ const App = () => {
             clearFields();
             setCurrentView('xpath');
           }}
+          onBulkCreate={handleBulkCreate} 
           onLogout={handleLogout}
         />
       )}

@@ -122,6 +122,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       handleGenerateSpider(message, sendResponse);
       return true;
 
+    case "bulkCreateSpiders":
+      handleBulkCreateSpiders(message, sendResponse);
+      return true;
+
     case "publishSpider":
       handlePublishSpider(message, sendResponse);
       return true;
@@ -354,6 +358,61 @@ async function handleGetSpiderList(message, sendResponse) {
     sendResponse({ success: true, data: data });
   } catch (err) {
     sendResponse({ success: false, error: err.message });
+  }
+}
+
+
+async function handleBulkCreateSpiders(message, sendResponse) {
+  try {
+    const { token, countryCode, urls } = message;
+    
+    if (!token) {
+      sendResponse({ success: false, error: "Authentication token not available" });
+      return;
+    }
+    
+    if (!countryCode) {
+      sendResponse({ success: false, error: "Country code is required" });
+      return;
+    }
+    
+    if (!urls || urls.length === 0) {
+      sendResponse({ success: false, error: "At least one URL is required" });
+      return;
+    }
+    
+    console.log("📤 Bulk Creating Spiders:", { countryCode, urlCount: urls.length });
+    
+    // Prepare payload according to the API specification
+    const payload = {
+      countryCode: countryCode,
+      urls: urls // Array of URLs - sourceKey will be extracted from URL by backend
+    };
+    
+    // TODO: Replace with actual API endpoint when provided by Reza
+    const API_ENDPOINT = "https://data.jobdesk.com/api/BulkCreateSpiders"; // Placeholder
+    
+    const response = await fetch(API_ENDPOINT, {
+      method: "POST",
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(payload)
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP ${response.status}: ${errorText}`);
+    }
+    
+    const result = await response.json();
+    console.log("✅ Bulk Spiders Created Successfully:", result);
+    sendResponse({ success: true, data: result });
+    
+  } catch (err) {
+    console.error("❌ Bulk Create Spiders API Error:", err);
+    sendResponse({ success: false, error: err.message || "Failed to create bulk spiders" });
   }
 }
 
