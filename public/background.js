@@ -126,6 +126,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       handleBulkCreateSpiders(message, sendResponse);
       return true;
 
+    case "resetSpiderSchedule":
+      handleResetSpiderSchedule(message, sendResponse);
+      return true;
+
     case "publishSpider":
       handlePublishSpider(message, sendResponse);
       return true;
@@ -354,7 +358,7 @@ async function handleGetSpiderList(message, sendResponse) {
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
     const data = await response.json();
-    console.log("Fetched spider list:", data[0].sourceKey);
+    console.log("Fetched spider list:", data);
     sendResponse({ success: true, data: data });
   } catch (err) {
     sendResponse({ success: false, error: err.message });
@@ -413,6 +417,54 @@ async function handleBulkCreateSpiders(message, sendResponse) {
   } catch (err) {
     console.error("❌ Bulk Create Spiders API Error:", err);
     sendResponse({ success: false, error: err.message || "Failed to create bulk spiders" });
+  }
+}
+
+async function handleResetSpiderSchedule(message, sendResponse) {
+  try {
+    const { token, sourceKey, countryCode } = message;
+    
+    if (!token) {
+      sendResponse({ success: false, error: "Authentication token not available" });
+      return;
+    }
+    
+    if (!sourceKey || !countryCode) {
+      sendResponse({ success: false, error: "Source key and country code are required" });
+      return;
+    }
+    
+    console.log("📤 Resetting Spider Schedule:", { sourceKey, countryCode });
+    
+    const payload = {
+      sourceKey: sourceKey,
+      countryCode: countryCode
+    };
+    
+    // TODO: Replace with actual API endpoint when provided
+    const API_ENDPOINT = "https://data.jobdesk.com/api/ResetSpiderSchedule"; // Placeholder
+    
+    const response = await fetch(API_ENDPOINT, {
+      method: "POST",
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(payload)
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP ${response.status}: ${errorText}`);
+    }
+    
+    const result = await response.json();
+    console.log("✅ Spider Schedule Reset Successfully:", result);
+    sendResponse({ success: true, data: result });
+    
+  } catch (err) {
+    console.error("❌ Reset Spider Schedule Error:", err);
+    sendResponse({ success: false, error: err.message || "Failed to reset spider schedule" });
   }
 }
 

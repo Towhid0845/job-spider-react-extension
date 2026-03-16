@@ -3,7 +3,7 @@ import { useState } from 'react';
 import Header from './Header.jsx';
 import BulkSpiderDialog from './BulkSpider.jsx';
 
-const WebsitesView = ({ websitesData, currentFilter, setCurrentFilter, selectedWebsite, isLoading, onSelectWebsite, onCustomSpider, onBulkCreate, onLogout }) => {
+const WebsitesView = ({ websitesData, currentFilter, setCurrentFilter, selectedWebsite, isLoading, onSelectWebsite, onCustomSpider, onBulkCreate, onResetSchedule, onLogout }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isBulkDialogOpen, setIsBulkDialogOpen] = useState(false);  
 
@@ -12,20 +12,32 @@ const WebsitesView = ({ websitesData, currentFilter, setCurrentFilter, selectedW
     await onBulkCreate(data);
   };
 
+  const handleResetSchedule = async (website) => {
+    if (!confirm(`Reset schedule for ${website.companyName}?`)) {
+      return;
+    }
+    
+    try {
+      await onResetSchedule(website); // Call parent handler
+    } catch (error) {
+      console.error('Failed to reset schedule:', error);
+      alert('Failed to reset schedule: ' + error.message);
+    }
+  };
+
   const getFilteredWebsites = () => {
     let filtered = websitesData;
     console.log("filtered data: ", filtered);
-    
 
     switch (currentFilter) {
       case 'no-code':
-        filtered = filtered.filter(w => w.hasErrors === true);
+        filtered = filtered.filter(w => w.hasNoSpider === true);
         break;
       case 'no-spider':
         filtered = filtered.filter(w => w.hasNoSpider === true);
         break;
       case 'broken-spider':
-        filtered = filtered.filter(w => w.status === 'broken-spider');
+        filtered = filtered.filter(w => w.hasErrors === true);
         break;
       default:
         break;
@@ -66,19 +78,21 @@ const WebsitesView = ({ websitesData, currentFilter, setCurrentFilter, selectedW
         <Header title="Spiders" onLogout={onLogout} />
 
         <div className="p-3 border-b flex justify-between items-center flex-wrap gap-3">
-          <button
-            onClick={onCustomSpider}
-            className="btn-section bg-gradient-to-r from-gray-600 to-gray-700 text-white px-4 py-[5px] rounded-full text-sm font-medium hover:shadow-lg transition-all cursor-pointer"
-          >
-            New
-          </button>
+          <span>
+            <button
+              onClick={onCustomSpider}
+              className="btn-section bg-gradient-to-r from-gray-600 to-gray-700 text-white px-4 py-[5px] rounded-full text-sm font-medium hover:shadow-lg transition-all cursor-pointer"
+            >
+              New
+            </button>
 
-          <button
-            onClick={() => setIsBulkDialogOpen(true)}
-            className="btn-section mr-auto bg-gradient-to-r from-gray-600 to-gray-700 text-white px-4 py-[5px] rounded-full text-sm font-medium hover:shadow-lg transition-all cursor-pointer"
-          >
-            Bulk
-          </button>
+            <button
+              onClick={() => setIsBulkDialogOpen(true)}
+              className="btn-section mr-auto ml-[10px] bg-gradient-to-r from-gray-600 to-gray-700 text-white px-4 py-[5px] rounded-full text-sm font-medium hover:shadow-lg transition-all cursor-pointer"
+            >
+              Bulk
+            </button>
+          </span>
 
           {/* search section */}
           <input
@@ -124,33 +138,85 @@ const WebsitesView = ({ websitesData, currentFilter, setCurrentFilter, selectedW
               <thead className="bg-gray-50 border-b sticky top-0 z-10">
                 <tr>
                   <th className="px-6 py-2 text-left text-xs font-semibold text-gray-600 uppercase">ISO2</th>
-                  <th className="px-6 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Company Name</th>
-                  <th className="px-6 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Domain</th>
-                  {/* <th className="px-6 py-2 text-left text-xs font-semibold text-gray-600 uppercase">LAST</th>
+                  {/* <th className="px-6 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Company Name</th> */}
+                  <th className="px-6 py-2 text-left text-xs font-semibold text-gray-600 uppercase max-w-[180px]">Domain</th>
+                  <th className="px-6 py-2 text-left text-xs font-semibold text-gray-600 uppercase">LAST</th>
                   <th className="px-6 py-2 text-left text-xs font-semibold text-gray-600 uppercase">JOBS</th>
                   <th className="px-6 py-2 text-left text-xs font-semibold text-gray-600 uppercase">ERR</th>
-                  <th className="px-6 py-2 text-left text-xs font-semibold text-gray-600 uppercase">NEXT</th> */}
+                  <th className="px-6 py-2 text-left text-xs font-semibold text-gray-600 uppercase">NEXT</th>
                 </tr>
               </thead>
               <tbody>
                 {getFilteredWebsites().length === 0 ? (
                   <tr>
-                    <td colSpan="3" className="text-center py-20 text-gray-500">
+                    <td colSpan="7" className="text-center py-20 text-gray-500">
                       <div className="text-4xl mb-2">🔭</div>
                       No websites found
                     </td>
                   </tr>
                 ) : (
                   getFilteredWebsites().map((website, index) => (
+                    // <tr
+                    //   key={index}
+                    //   onClick={() => onSelectWebsite(website)}
+                    //   className={`border-b hover:bg-indigo-50 cursor-pointer transition-all duration-300 ease-in-out hover:translate-x-[5px] ${selectedWebsite?.companyName === website.companyName ? 'bg-indigo-100 border-l-4 border-l-indigo-600' : ''
+                    //     }`}
+                    // >
+                    //   <td className="px-6 py-[5px]">{website.countryCode}</td>
+                    //   <td className="px-6 py-[5px] font-medium">{website.companyName}</td>
+                    //   <td className="px-6 py-[5px] text-gray-600">{website.sourceKey}</td>
+                    // </tr>
                     <tr
                       key={index}
                       onClick={() => onSelectWebsite(website)}
-                      className={`border-b hover:bg-indigo-50 cursor-pointer transition-all duration-300 ease-in-out hover:translate-x-[5px] ${selectedWebsite?.companyName === website.companyName ? 'bg-indigo-100 border-l-4 border-l-indigo-600' : ''
-                        }`}
+                      className={`border-b hover:bg-indigo-50 cursor-pointer transition-all duration-300 ease-in-out hover:translate-x-[5px] 
+                        ${selectedWebsite?.companyName === website.companyName ? 'bg-indigo-100 border-l-4 border-l-indigo-600' : ''}
+                        ${website.errorCount > 0 ? 'bg-red-50' : ''} // ADD THIS LINE for red background
+                      `}
                     >
                       <td className="px-6 py-[5px]">{website.countryCode}</td>
-                      <td className="px-6 py-[5px] font-medium">{website.companyName}</td>
-                      <td className="px-6 py-[5px] text-gray-600">{website.sourceKey}</td>
+                      {/* <td className="px-6 py-[5px] font-medium">{website.companyName}</td> */}
+                      <td className="px-6 py-[5px] text-gray-600 max-w-[180px] truncate">{website.sourceKey}</td>
+                      
+                      {/* ADD THESE NEW CELLS */}
+                      <td className="px-6 py-[5px] text-gray-600">
+                        {website.lastRunCompleted ? new Date(website.lastRunCompleted).toLocaleString() : '-'}
+                      </td>
+                      <td className="px-6 py-[5px] text-center">{website.lastRunTotalJobs || 0}</td>
+                      <td className={`px-6 py-[5px] text-center font-semibold ${website.errorCount > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                        {website.errorCount || 0}
+                      </td>
+                      <td className="px-6 py-[5px] text-gray-600">
+                        {website.nextScheduledRun ? new Date(website.nextScheduledRun).toLocaleString() : '-'}
+                        {website.errorCount > 0 && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation(); // Prevent row click
+                              handleResetSchedule(website);
+                            }}
+                            className="text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
+                            title="Reset Schedule"
+                          >
+                            🔄 Reset
+                          </button>
+                        )}
+                      </td>
+                      
+                      {/* ADD RESET BUTTON */}
+                      {/* <td className="px-6 py-[5px]">
+                        {website.errorCount > 0 && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation(); // Prevent row click
+                              handleResetSchedule(website);
+                            }}
+                            className="text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
+                            title="Reset Schedule"
+                          >
+                            🔄 Reset
+                          </button>
+                        )}
+                      </td> */}
                     </tr>
                   ))
                 )}

@@ -286,6 +286,37 @@ const App = () => {
     }
   };
 
+  const handleResetSchedule = async (website) => {
+    try {
+      setIsLoading(true);
+      
+      const response = await new Promise((resolve) => {
+        chrome.runtime.sendMessage({
+          action: "resetSpiderSchedule",
+          token: token,
+          sourceKey: website.sourceKey,
+          countryCode: website.countryCode
+        }, resolve);
+      });
+  
+      if (!response.success) {
+        throw new Error(response.error);
+      }
+  
+      // Reload websites list
+      await loadWebsites();
+      
+      showNotification('Schedule reset successfully', 'success');
+      
+    } catch (error) {
+      console.error('Failed to reset schedule:', error);
+      showNotification('Failed to reset schedule: ' + error.message, 'error');
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 font-sans">
       {notification && (
@@ -322,6 +353,7 @@ const App = () => {
             setCurrentView('xpath');
           }}
           onBulkCreate={handleBulkCreate} 
+          onResetSchedule={handleResetSchedule}
           onLogout={handleLogout}
         />
       )}
